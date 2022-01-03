@@ -53,7 +53,9 @@ class NoteControllerTest {
     }
 
     @Test
-    // WithUserDetails 로 테스트 하는 방법
+    // @WithUserDetails 로 테스트 하는 방법
+    // 가짜 user를 생성하고 authentocation을 만들고 UserDetailsService의 Bean에 이름을 넣어줘서
+    // userDatailService.loadUserByUsername(String username)을 통해 User를 가져옴
     @WithUserDetails(
             value = "user123", // userDetailsService를 통해 가져올 수 있는 유저
             userDetailsServiceBeanName = "userDetailsService", // UserDetailsService 구현체의 Bean

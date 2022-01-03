@@ -41,7 +41,7 @@ class NoticeControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser // => 가짜 유저(Security의 User)를 생성하고 Authentocation을 만듬
     void getNotice_인증있음() throws Exception {
         mockMvc.perform(get("/notice"))
                 .andExpect(status().isOk())
