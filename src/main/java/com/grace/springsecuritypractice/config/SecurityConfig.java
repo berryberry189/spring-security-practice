@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,66 +16,74 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-/**
- * Security 설정 Config
- */
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserService userService;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // basic authentication
-        http.httpBasic().disable(); // basic authentication filter 비활성화
+
+        // basic authentication filter disable
+        http.httpBasic().disable();
+
         // csrf
         http.csrf();
-        // remember-me
+
+        // rememberMeAuthenticationFilter
         http.rememberMe();
-        // authorization
+
+        // authorization 경로별 권한 설정
         http.authorizeRequests()
-                // /와 /home은 모두에게 허용
+                // /, /home, /signup => 모두가 사용 가능
                 .antMatchers("/", "/home", "/signup").permitAll()
-                // hello 페이지는 USER 롤을 가진 유저에게만 허용
+                // user 권한인 경우에만
                 .antMatchers("/note").hasRole("USER")
+                // admin 권한인 경우에만
                 .antMatchers("/admin").hasRole("ADMIN")
+                // /notice 경로의 POST, DELETE 요청은 admin 권한인 경우에만
                 .antMatchers(HttpMethod.POST, "/notice").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/notice").hasRole("ADMIN")
                 .anyRequest().authenticated();
+
         // login
         http.formLogin()
+                // 로그인 페이지 설정
                 .loginPage("/login")
+                // 성공지 이동하는 경로
                 .defaultSuccessUrl("/")
-                .permitAll(); // 모두 허용
+                .permitAll();
+
         // logout
         http.logout()
+                // 로그아웃 요청 경로
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/");
+
     }
 
     @Override
-    public void configure(WebSecurity web) {
-        // 정적 리소스 spring security 대상에서 제외
-//        web.ignoring().antMatchers("/images/**", "/css/**"); // 아래 코드와 같은 코드입니다.
-        web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring()
+                // 정적 리소스의 일반적인 위치를 전부 ignoring
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations());
     }
 
-    /**
-     * UserDetailsService 구현
-     *
-     * @return UserDetailsService
-     */
     @Bean
     @Override
-    public UserDetailsService userDetailsService() {
+    protected UserDetailsService userDetailsService() {
+        // User 클래스가 UserDetails을 상속받고 있으므로 User 리턴 가능
         return username -> {
             User user = userService.findByUsername(username);
-            if (user == null) {
+            if(user != null){
                 throw new UsernameNotFoundException(username);
             }
             return user;
         };
     }
+
 }
