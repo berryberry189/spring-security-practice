@@ -21,88 +21,46 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class NoticeControllerTest {
 
-    @Autowired
-    private NoticeRepository noticeRepository;
     private MockMvc mockMvc;
 
+    // 테스트 실행전 MockMvc 초기화
     @BeforeEach
-    public void setUp(@Autowired WebApplicationContext applicationContext) {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(applicationContext)
-                .apply(springSecurity())
+    public void setup(@Autowired WebApplicationContext webApplicationContext){
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity()) // spring security 적용
                 .alwaysDo(print())
                 .build();
     }
 
+    // notice 페이지는 인증된 사람이면 모두 접근 가능
     @Test
     void getNotice_인증없음() throws Exception {
         mockMvc.perform(get("/notice"))
-                .andExpect(redirectedUrlPattern("**/login"))
-                .andExpect(status().is3xxRedirection());
-    }
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
 
+    }
     @Test
-    @WithMockUser // => 가짜 유저(Security의 User)를 생성하고 Authentocation을 만듬
+    @WithMockUser // 인증된 유저
     void getNotice_인증있음() throws Exception {
         mockMvc.perform(get("/notice"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("notice/index"));
-    }
-
-    @Test
-    void postNotice_인증없음() throws Exception {
-        mockMvc.perform(
-                post("/notice")
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("title", "제목")
-                        .param("content", "내용")
-        ).andExpect(status().isForbidden()); // 접근 거부
-    }
-
-    @Test
-    @WithMockUser(roles = {"USER"}, username = "admin", password = "admin")
-    void postNotice_유저인증있음() throws Exception {
-        mockMvc.perform(
-                post("/notice").with(csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("title", "제목")
-                        .param("content", "내용")
-        ).andExpect(status().isForbidden()); // 접근 거부
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = {"ADMIN"}, username = "admin", password = "admin")
-    void postNotice_어드민인증있음() throws Exception {
+    void postNotice_어드민권한() throws Exception {
         mockMvc.perform(
-                post("/notice").with(csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("title", "제목")
-                        .param("content", "내용")
-        ).andExpect(redirectedUrl("notice")).andExpect(status().is3xxRedirection());
+                        post("/notice").with(csrf())
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                .param("title", "제목")
+                                .param("content", "내용")
+                ).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("notice"));
     }
 
     @Test
-    void deleteNotice_인증없음() throws Exception {
-        Notice notice = noticeRepository.save(new Notice("제목", "내용"));
-        mockMvc.perform(
-                delete("/notice?id=" + notice.getId())
-        ).andExpect(status().isForbidden()); // 접근 거부
-    }
+    void deleteNotice(){
 
-    @Test
-    @WithMockUser(roles = {"USER"}, username = "admin", password = "admin")
-    void deleteNotice_유저인증있음() throws Exception {
-        Notice notice = noticeRepository.save(new Notice("제목", "내용"));
-        mockMvc.perform(
-                delete("/notice?id=" + notice.getId()).with(csrf())
-        ).andExpect(status().isForbidden()); // 접근 거부
-    }
-
-    @Test
-    @WithMockUser(roles = {"ADMIN"}, username = "admin", password = "admin")
-    void deleteNotice_어드민인증있음() throws Exception {
-        Notice notice = noticeRepository.save(new Notice("제목", "내용"));
-        mockMvc.perform(
-                delete("/notice?id=" + notice.getId()).with(csrf())
-        ).andExpect(redirectedUrl("notice")).andExpect(status().is3xxRedirection());
     }
 }
