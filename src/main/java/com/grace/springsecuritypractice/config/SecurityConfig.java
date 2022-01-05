@@ -2,7 +2,11 @@ package com.grace.springsecuritypractice.config;
 
 import com.grace.springsecuritypractice.filter.StopwatchFilter;
 import com.grace.springsecuritypractice.filter.TestAuthenticationFilter;
+import com.grace.springsecuritypractice.jwt.JwtAuthenticationFilter;
+import com.grace.springsecuritypractice.jwt.JwtAuthorizationFilter;
+import com.grace.springsecuritypractice.jwt.JwtProperties;
 import com.grace.springsecuritypractice.user.User;
+import com.grace.springsecuritypractice.user.UserRepository;
 import com.grace.springsecuritypractice.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -14,9 +18,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -28,6 +34,7 @@ import java.util.Arrays;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -35,12 +42,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // stopwatch filter 추가
         // stopwatch filter를 가장 먼저 둬야하기 때문에
         // WebAsyncManagerIntegrationFilter 보다 앞에 위치 (addFilterBefore)
-        http.addFilterBefore(new StopwatchFilter(), WebAsyncManagerIntegrationFilter.class);
+        //http.addFilterBefore(new StopwatchFilter(), WebAsyncManagerIntegrationFilter.class);
 
         // tester authentication filter 추가
         // UsernamePasswordAuthenticationFilter 보다 앞에 위치하도록 함
-        http.addFilterBefore(new TestAuthenticationFilter(this.authenticationManager()),
-                UsernamePasswordAuthenticationFilter.class);
+        //http.addFilterBefore(new TestAuthenticationFilter(this.authenticationManager()),
+        //        UsernamePasswordAuthenticationFilter.class);
 
         // basic authentication filter disable
         http.httpBasic().disable();
@@ -50,6 +57,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // rememberMeAuthenticationFilter
         http.rememberMe();
+
+        // stateless
+        http.sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        // jwt filter
+        http.addFilterBefore(
+                new JwtAuthenticationFilter(authenticationManager()),
+                UsernamePasswordAuthenticationFilter.class
+        ).addFilterBefore(
+                new JwtAuthorizationFilter(userRepository),
+                BasicAuthenticationFilter.class
+        );
+
 
         // authorization 경로별 권한 설정
         http.authorizeRequests()
@@ -76,7 +97,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.logout()
                 // 로그아웃 요청 경로
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/");
+                .logoutSuccessUrl("/")
+                .invalidateHttpSession(true)
+                .deleteCookies(JwtProperties.COOKIE_NAME);
 
     }
 
