@@ -26,3 +26,31 @@
     4. 얻은 정보( user id )를 사용하여 DB에서 사용자 권한을 확인한다
     5. 권한이 확인되면 해당요청 처리, 권한이 없으면 에러코드 출력
 
+<br>
+
+
+## Spring Security 내부구조
+
+```java
+SecurityContext context = SecurityContextHolder.getContext(); // Security Context
+Authentication authentication = context.getAuthentication(); // authentication
+authentication.getPrincipal();
+authentication.getAuthorities();
+authentication.getCredentials();
+authentication.getDetails();
+authentication.isAuthenticated();
+```
+
+- SecurityContext
+    - 접근 주체와 인증에 대한 정보를 담고있는 Context (즉 Authentication을 담고있음)
+- Authentication
+    - Principal과 GrantAuthority를 제공. 인증이 이루어 지면 해당 Authentication이 저장됨
+    - `Authentication.isAuthenticated();` ⇒ true이면 인증 완료
+- Principal
+    - 유저에 해당하는 정보
+    - 대부분의 경우 Principal로 UserDetails를 반환한다
+- GrantAuthority
+    - prefix로 ‘ROLE_’ 이 붙으며 ROLE_ADMIN, ROLE_USER등 Principal이 가지고 있는 권한을 나타낸다
+    - 인증 이후에 인가를 할 때 사용한다
+    - 권한은 여러개 일수 있기 때문에 Collection<GrantedAuthority>형태로 제공한다
+
