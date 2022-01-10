@@ -72,4 +72,16 @@ authentication.isAuthenticated();
 - 해시 알고리즘 사용 - 복호화가 거의 불가능
 - 회원가입시 password를 암호화 하여 저장 → 로그인할 때 password가 들어오면 같은 해시함수로 암호화
 → 비교 → 동일하면 같은 password로 인지
+    
+    
+<br>
+    
+    
+## Security Filter
+- Spring Security의 동작은 사실상 Filter로 동작한다고 해도 무방
+- 필터는 많은 종류가 존재하며 지정한 순서대로 동작한다
+    - 순서 지정 ⇒ FilterOrderRegistration
+    - Filter들은 100번 부터 시작해서 100씩 증가하며 100이라는 공백 사이사이에 커스텀 필터를 넣을 수 있도록 한 것
+- 모든 필터는 Filter를 상속하며 필터는 요청이나 응답 또는 둘 다에 대해 필터링 작업을 수행한다
+- 필터는 doFilter 메소드에서 필터링을 수행하며 필수적으로 구현하도록 되어있다 (핵심내용이 doFilter에 있음)
 
