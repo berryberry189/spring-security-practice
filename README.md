@@ -84,4 +84,11 @@ authentication.isAuthenticated();
     - Filter들은 100번 부터 시작해서 100씩 증가하며 100이라는 공백 사이사이에 커스텀 필터를 넣을 수 있도록 한 것
 - 모든 필터는 Filter를 상속하며 필터는 요청이나 응답 또는 둘 다에 대해 필터링 작업을 수행한다
 - 필터는 doFilter 메소드에서 필터링을 수행하며 필수적으로 구현하도록 되어있다 (핵심내용이 doFilter에 있음)
+    
+<br>
+    
+ ### SecurityContextPersistenceFilter
+
+- 보통 두번째로 실행됨
+- HttpSession에서 SecurityContext를 찾아와서 SecurityContextHolder에 넣어주는 역할이며 만약에 SecurityContext를 찾았는데 없다면 그냥 새로 하나 만들어준다
 
